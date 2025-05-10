@@ -33,7 +33,7 @@ Aminijam184Character::Aminijam184Character()
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
 	GetCharacterMovement()->JumpZVelocity = 700.f;
-	GetCharacterMovement()->AirControl = 0.35f;
+	GetCharacterMovement()->AirControl = 0.55f;
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
@@ -73,7 +73,14 @@ void Aminijam184Character::Tick(float DeltaSeconds)
 	if (isJumping)
 	{
 		jumpHeldTime += DeltaSeconds;
+
+		if (jumpHeldTime >= 1.0f)
+		{
+			StartGentleFall();
+		}
 	}
+
+	dashTimer -= DeltaSeconds;
 
 	//UE_LOG(LogTemp, Warning, TEXT("Remaining Jumps %d"), remainingJumps);
 	if (remainingJumps < maxJumps)
@@ -102,6 +109,9 @@ void Aminijam184Character::SetupPlayerInputComponent(class UInputComponent* Play
 
 		//Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &Aminijam184Character::Move);
+		EnhancedInputComponent->BindAction(DashAction, ETriggerEvent::Triggered, this, &Aminijam184Character::AirDash);
+		EnhancedInputComponent->BindAction(GlideAction, ETriggerEvent::Triggered, this, &Aminijam184Character::StartGlide);
+		EnhancedInputComponent->BindAction(GlideAction, ETriggerEvent::Completed, this, &Aminijam184Character::StopGlide);
 
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &Aminijam184Character::Look);
@@ -120,6 +130,7 @@ void Aminijam184Character::Move(const FInputActionValue& Value)
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		const FRotator PitchRotation(0, 0, Rotation.Pitch);
 
 		// get forward vector
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -130,6 +141,16 @@ void Aminijam184Character::Move(const FInputActionValue& Value)
 		// add movement 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
+
+		if (GetCharacterMovement()->MovementMode == EMovementMode::MOVE_Flying)
+		{
+			const FVector UpDirection = FRotationMatrix(PitchRotation).GetUnitAxis(EAxis::Y);
+			UE_LOG(LogTemp, Warning, TEXT("Flying X:%f Y:%f Z:%f"), UpDirection.X, UpDirection.Y, UpDirection.Z);
+
+			glideSpeed += UpDirection.Z;
+			UE_LOG(LogTemp, Error, TEXT("Speed %f"), glideSpeed);
+			AddMovementInput(UpDirection, -1.0f * glideSpeed);
+		}
 	}
 }
 
@@ -143,6 +164,12 @@ void Aminijam184Character::Look(const FInputActionValue& Value)
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+
+	if (GetCharacterMovement()->MovementMode == EMovementMode::MOVE_Flying)
+	{
+		flyingDirection.RotateAngleAxis(LookAxisVector.Y * 45.0f, FVector{ 1, 0, 0 });
+		//GetCharacterMovement()->AddImpulse(flyingDirection * 1000, false);
 	}
 }
 
@@ -169,5 +196,45 @@ void Aminijam184Character::StopJumping()
 	isJumping = false;
 	remainingJumps = FMath::Max(0, remainingJumps -1);
 	jumpHeldTime = 0;
+	StopGentleFall();
 	Super::StopJumping();
+}
+
+void Aminijam184Character::StartGentleFall()
+{
+	GetCharacterMovement()->GravityScale = 0.15f;
+}
+
+void Aminijam184Character::StopGentleFall()
+{
+	GetCharacterMovement()->GravityScale = 1.0f;
+}
+
+void Aminijam184Character::StartGlide()
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+	flyingDirection = GetActorForwardVector();
+
+	APlayerController* PC = Cast<APlayerController>(Controller);
+	//PC->SetIgnoreLookInput(false);
+}
+
+void Aminijam184Character::StopGlide()
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
+
+	APlayerController* PC = Cast<APlayerController>(Controller);
+	glideSpeed = 0;
+	//PC->SetIgnoreLookInput(true);
+}
+
+void Aminijam184Character::AirDash()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Dash Timer %f"), dashTimer);
+
+	if (dashTimer < 0.0f)
+	{
+		GetCharacterMovement()->AddImpulse(GetActorForwardVector() * 100000, false);
+		dashTimer = 5.0f;
+	}
 }

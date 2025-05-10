@@ -29,6 +29,14 @@ class Aminijam184Character : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* JumpAction;
 
+	/** Dash Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+		class UInputAction* DashAction;
+	
+	/** Glide Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+		class UInputAction* GlideAction;
+
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* MoveAction;
@@ -53,6 +61,14 @@ protected:
 	virtual void Jump() override;
 	virtual void StopJumping() override;
 
+	void StartGentleFall();
+	void StopGentleFall();
+
+	void StartGlide();
+	void StopGlide();
+
+	void AirDash();
+
 	bool isJumping = false;
 	float jumpHeldTime = 0;
 	const int maxJumps = 3;
@@ -60,6 +76,9 @@ protected:
 
 	const float jumpRechargeTime = 3.0f;
 	float jumpRechargeTimer;
+	float dashTimer = 0.0f;
+	FVector flyingDirection;
+	float glideSpeed = 0;
 
 protected:
 	// APawn interface
