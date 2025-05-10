@@ -70,6 +70,8 @@ void Aminijam184Character::BeginPlay()
 
 void Aminijam184Character::Tick(float DeltaSeconds)
 {
+	Super::Tick(DeltaSeconds);
+
 	if (isJumping)
 	{
 		jumpHeldTime += DeltaSeconds;
@@ -91,6 +93,42 @@ void Aminijam184Character::Tick(float DeltaSeconds)
 		{
 			remainingJumps++;
 			jumpRechargeTimer = 0;
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("TEST"));
+
+	if (Controller != nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("FLYING"));
+
+		if (GetCharacterMovement()->MovementMode == EMovementMode::MOVE_Flying)
+		{
+			APlayerController* PC = Cast<APlayerController>(Controller);
+			//const FRotator Rotation = GetActorRotation();
+
+			//const FRotator Rotation = Controller->GetControlRotation();
+
+			
+			const FVector UpDirection = FRotationMatrix(flyingDirection).GetScaledAxis(EAxis::Z);
+			const FVector XDirection = FRotationMatrix(flyingDirection).GetScaledAxis(EAxis::X);
+			const FVector YDirection = FRotationMatrix(flyingDirection).GetScaledAxis(EAxis::Y);
+			UE_LOG(LogTemp, Warning, TEXT("Flying X:%f Y:%f Z:%f"), UpDirection.X, UpDirection.Y, UpDirection.Z);
+
+			glideSpeed += UpDirection.Z;
+			UE_LOG(LogTemp, Error, TEXT("Speed %f"), glideSpeed);
+
+			/*if (glideSpeed < 0)
+			{
+				glideSpeed = 0;
+			}
+			else*/
+			{
+				glideSpeed = 1;
+				AddMovementInput(UpDirection, glideSpeed);
+				//AddMovementInput(YDirection, glideSpeed);
+				//AddMovementInput(XDirection, glideSpeed);
+			}
 		}
 	}
 }
@@ -130,7 +168,9 @@ void Aminijam184Character::Move(const FInputActionValue& Value)
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
-		const FRotator PitchRotation(0, 0, Rotation.Pitch);
+
+		
+		//const FRotator PitchRotation(0, 0, Rotation.Pitch);
 
 		// get forward vector
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -139,17 +179,10 @@ void Aminijam184Character::Move(const FInputActionValue& Value)
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
 		// add movement 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
-
-		if (GetCharacterMovement()->MovementMode == EMovementMode::MOVE_Flying)
+		if (GetCharacterMovement()->MovementMode != EMovementMode::MOVE_Flying)
 		{
-			const FVector UpDirection = FRotationMatrix(PitchRotation).GetUnitAxis(EAxis::Y);
-			UE_LOG(LogTemp, Warning, TEXT("Flying X:%f Y:%f Z:%f"), UpDirection.X, UpDirection.Y, UpDirection.Z);
-
-			glideSpeed += UpDirection.Z;
-			UE_LOG(LogTemp, Error, TEXT("Speed %f"), glideSpeed);
-			AddMovementInput(UpDirection, -1.0f * glideSpeed);
+			AddMovementInput(ForwardDirection, MovementVector.Y);
+			AddMovementInput(RightDirection, MovementVector.X);
 		}
 	}
 }
@@ -166,11 +199,8 @@ void Aminijam184Character::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 
-	if (GetCharacterMovement()->MovementMode == EMovementMode::MOVE_Flying)
-	{
-		flyingDirection.RotateAngleAxis(LookAxisVector.Y * 45.0f, FVector{ 1, 0, 0 });
-		//GetCharacterMovement()->AddImpulse(flyingDirection * 1000, false);
-	}
+	flyingDirection.Pitch += LookAxisVector.Y;
+	flyingDirection.Yaw += LookAxisVector.X;
 }
 
 bool Aminijam184Character::CanJumpInternal_Implementation() const
@@ -213,9 +243,9 @@ void Aminijam184Character::StopGentleFall()
 void Aminijam184Character::StartGlide()
 {
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
-	flyingDirection = GetActorForwardVector();
+	//flyingDirection = GetActorForwardVector();
 
-	APlayerController* PC = Cast<APlayerController>(Controller);
+	//APlayerController* PC = Cast<APlayerController>(Controller);
 	//PC->SetIgnoreLookInput(false);
 }
 

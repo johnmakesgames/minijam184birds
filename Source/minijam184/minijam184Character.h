@@ -77,8 +77,9 @@ protected:
 	const float jumpRechargeTime = 3.0f;
 	float jumpRechargeTimer;
 	float dashTimer = 0.0f;
-	FVector flyingDirection;
+	//FVector flyingDirection;
 	float glideSpeed = 0;
+	FRotator flyingDirection;
 
 protected:
 	// APawn interface
@@ -87,7 +88,7 @@ protected:
 	// To add mapping context
 	virtual void BeginPlay();
 
-	virtual void Tick(float DeltaSeconds);
+	virtual void Tick(float DeltaSeconds) override;
 
 public:
 	/** Returns CameraBoom subobject **/
