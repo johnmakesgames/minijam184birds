@@ -16,6 +16,8 @@
 
 Aminijam184Character::Aminijam184Character()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
@@ -62,6 +64,26 @@ void Aminijam184Character::BeginPlay()
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		}
+	}
+}
+
+void Aminijam184Character::Tick(float DeltaSeconds)
+{
+	if (isJumping)
+	{
+		jumpHeldTime += DeltaSeconds;
+	}
+
+	//UE_LOG(LogTemp, Warning, TEXT("Remaining Jumps %d"), remainingJumps);
+	if (remainingJumps < maxJumps)
+	{
+		jumpRechargeTimer += DeltaSeconds;
+		//UE_LOG(LogTemp, Warning, TEXT("Recharge Timer %f"), jumpRechargeTimer);
+		if (jumpRechargeTimer >= jumpRechargeTime)
+		{
+			remainingJumps++;
+			jumpRechargeTimer = 0;
 		}
 	}
 }
@@ -124,6 +146,28 @@ void Aminijam184Character::Look(const FInputActionValue& Value)
 	}
 }
 
+bool Aminijam184Character::CanJumpInternal_Implementation() const
+{
+	return jumpHeldTime < 1.0f;
+}
 
+void Aminijam184Character::Jump()
+{
+	if (remainingJumps > 0)
+	{
+		if (!isJumping)
+		{
+			isJumping = true;
+		}
 
+		Super::Jump();
+	}
+}
 
+void Aminijam184Character::StopJumping()
+{
+	isJumping = false;
+	remainingJumps = FMath::Max(0, remainingJumps -1);
+	jumpHeldTime = 0;
+	Super::StopJumping();
+}

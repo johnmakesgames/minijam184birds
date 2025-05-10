@@ -48,7 +48,18 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-			
+
+	virtual bool CanJumpInternal_Implementation() const override;
+	virtual void Jump() override;
+	virtual void StopJumping() override;
+
+	bool isJumping = false;
+	float jumpHeldTime = 0;
+	const int maxJumps = 3;
+	int remainingJumps = maxJumps;
+
+	const float jumpRechargeTime = 3.0f;
+	float jumpRechargeTimer;
 
 protected:
 	// APawn interface
@@ -56,6 +67,8 @@ protected:
 	
 	// To add mapping context
 	virtual void BeginPlay();
+
+	virtual void Tick(float DeltaSeconds);
 
 public:
 	/** Returns CameraBoom subobject **/
