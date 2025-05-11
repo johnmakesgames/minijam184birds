@@ -96,32 +96,38 @@ void Aminijam184Character::Tick(float DeltaSeconds)
 		}
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Score %d"), score)
+	UE_LOG(LogTemp, Warning, TEXT("TEST"));
 
 	if (Controller != nullptr)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("FLYING"));
+
 		if (GetCharacterMovement()->MovementMode == EMovementMode::MOVE_Flying)
 		{
-			const FVector UpDirection = FollowCamera->GetComponentRotation().Vector();
+			//APlayerController* PC = Cast<APlayerController>(Controller);
+			////const FRotator Rotation = GetActorRotation();
 
-			if (UpDirection.Z < -0.5f)
-			{
-				glideSpeed += FMath::Abs(UpDirection.Z);
-			}
-			else
-			{
-				glideSpeed -= FMath::Abs(UpDirection.Z) * 0.75f;
-			}
+			////const FRotator Rotation = Controller->GetControlRotation();
 
+			//
+			const FVector UpDirection = flyingDirection.Vector();
+			//const FVector XDirection = FRotationMatrix(flyingDirection).GetScaledAxis(EAxis::X);
+			//const FVector YDirection = FRotationMatrix(flyingDirection).GetScaledAxis(EAxis::Y);
+			UE_LOG(LogTemp, Warning, TEXT("Flying X:%f Y:%f Z:%f"), UpDirection.X, UpDirection.Y, UpDirection.Z);
+
+			glideSpeed += UpDirection.Z;
 			UE_LOG(LogTemp, Error, TEXT("Speed %f"), glideSpeed);
 
-			if (glideSpeed < 0)
+			/*if (glideSpeed < 0)
 			{
 				glideSpeed = 0;
 			}
-			else
+			else*/
 			{
+				glideSpeed = 1;
 				AddMovementInput(UpDirection, glideSpeed);
+				//AddMovementInput(YDirection, glideSpeed);
+				//AddMovementInput(XDirection, glideSpeed);
 			}
 		}
 	}
@@ -163,15 +169,18 @@ void Aminijam184Character::Move(const FInputActionValue& Value)
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
+		
+		//const FRotator PitchRotation(0, 0, Rotation.Pitch);
+
+		// get forward vector
+		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	
+		// get right vector 
+		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
 		// add movement 
 		if (GetCharacterMovement()->MovementMode != EMovementMode::MOVE_Flying)
 		{
-			// get forward vector
-			const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
-			// get right vector 
-			const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
 			AddMovementInput(ForwardDirection, MovementVector.Y);
 			AddMovementInput(RightDirection, MovementVector.X);
 		}

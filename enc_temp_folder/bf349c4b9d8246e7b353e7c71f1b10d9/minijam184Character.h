@@ -47,9 +47,6 @@ class Aminijam184Character : public ACharacter
 
 public:
 	Aminijam184Character();
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character")
-	int score;
 	
 
 protected:
